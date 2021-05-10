@@ -6,16 +6,18 @@
     <description>Recent content in Posts on Kevin Huang</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-US</language>
-    <lastBuildDate>Thu, 23 Jul 2015 21:13:14 -0500</lastBuildDate><atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 09 May 2021 00:00:00 +0000</lastBuildDate><atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Hello R Markdown</title>
-      <link>/post/2015/07/23/hello-r-markdown/</link>
-      <pubDate>Thu, 23 Jul 2015 21:13:14 -0500</pubDate>
+      <title>Python Fun</title>
+      <link>/post/2021/05/09/python-fun/</link>
+      <pubDate>Sun, 09 May 2021 00:00:00 +0000</pubDate>
       
-      <guid>/post/2015/07/23/hello-r-markdown/</guid>
-      <description>R Markdown This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see http://rmarkdown.rstudio.com.
-You can embed an R code chunk like this:
-summary(cars) ## speed dist ## Min. : 4.0 Min. : 2.00 ## 1st Qu.:12.0 1st Qu.: 26.00 ## Median :15.0 Median : 36.00 ## Mean :15.4 Mean : 42.98 ## 3rd Qu.</description>
+      <guid>/post/2021/05/09/python-fun/</guid>
+      <description> Learning python for the first time has been super fun and interesting. Here is an example of indexing with python:
+list=[&amp;#39;rooster&amp;#39;,&amp;#39;wombat&amp;#39;,&amp;#39;whale&amp;#39;,&amp;#39;cat&amp;#39;,&amp;#39;hedgehog&amp;#39;] list[3:] ## [&amp;#39;cat&amp;#39;, &amp;#39;hedgehog&amp;#39;] The code returns elements after index 3 (first element is 0).
+source: https://www.instagram.com/mr.pokee/
+ Here’s how python and R can interact with each other:
+library(reticulate) q&amp;lt;-&amp;quot;SDS&amp;quot; q=&amp;quot;348&amp;quot; print(r.q,q) ## SDS 348 cat(c(q,py$q)) ## SDS 348 </description>
     </item>
     
   </channel>

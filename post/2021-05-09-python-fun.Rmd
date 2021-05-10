@@ -1,0 +1,36 @@
+---
+title: Python Fun
+author: Kevin Huang
+date: '2021-05-09'
+slug: python-fun
+categories: []
+tags: []
+description: ''
+---
+
+Learning python for the first time has been super fun and interesting. Here is an example of indexing with python:
+
+```{python}
+list=['rooster','wombat','whale','cat','hedgehog']
+list[3:]
+```
+
+The code returns elements after index 3 (first element is 0).
+
+![source: https://www.instagram.com/mr.pokee/](/post/2021-05-09-python-fun_files/cat.PNG)
+
+Here's how python and R can interact with each other:
+
+```{R}
+library(reticulate)
+q<-"SDS"
+```
+
+```{python}
+q="348"
+print(r.q,q)
+```
+
+```{R}
+cat(c(q,py$q))
+```
