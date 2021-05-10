@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Kevin Huang" />
+    
+    <link rel="shortcut icon" type="image/x-icon" href="../../img/favicon.ico">
+    <title>Project 1: Exploratory Data Analysis</title>
+    <meta name="generator" content="Hugo 0.83.1" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="../../css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="../../"><i class="fa fa-home"></i></a>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div class="navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="../../post/">BLOG</a></li>
+        
+        <li><a href="../../projects/">PROJECTS</a></li>
+        
+        <li><a href="../../resume/">RESUME</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="../../project/project1/">Project 1: Exploratory Data Analysis</a></strong>
+          </h3>
+        </div>
+ 
+<div class="blog-title">
+          <h4>
+         January 1, 0001 
+            &nbsp;&nbsp;
+            
+          </h4>
+        </div>
+
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+
+<div id="kevin-huang-kyh283" class="section level2">
+<h2>Kevin Huang kyh283</h2>
+<div id="introduction" class="section level3">
+<h3>Introduction</h3>
+<p>I gathered general data on Dueber’s 96-plasmid yeast toolkit (<a href="https://pubs.acs.org/doi/10.1021/sb500366v" class="uri">https://pubs.acs.org/doi/10.1021/sb500366v</a>) as well as data relating to a specific prep of these 96 plasmids. The 96-plasmid yeast toolkit is a standardized set of DNA parts which enables the high-throughput, combinatorial assembly of yeast genes. This is interesting to me because I am currently working with this particular toolkit in lab.</p>
+<p>The first dataset (info) contains the plasmid name, part type, part description, and E. coli antibiotic marker. This is provided by Dueber in his paper. The second dataset (ytk) contains the well number, plasmid name, concentration (ng), length (bp), and volume (ul) for one particular 96-well DNA plate. The data can be be combined because the variables each correlate to the plasmid name (YTK001-096), which is a common variable in the datasets. I expect there will be an association between the type of plasmid and the length. For instance, I think that coding sequences should have a greater average length than terminators.</p>
+<pre class="r"><code>library(tidyverse)
+info &lt;- read_csv(&quot;https://docs.google.com/spreadsheets/d/1dw3Dnj5X_U5DDC_ijWEhpWhSMaZY6eveDPK1ZwXBGOI/export?gid=0&amp;format=csv&quot;)
+ytk &lt;- read_csv(&quot;https://docs.google.com/spreadsheets/d/1WnC1S73Q8W6LKGrxRLHrgmePQHFdqRPqFLSdb3E4Hao/export?gid=0&amp;format=csv&quot;)</code></pre>
+</div>
+<div id="tidying-rearranging-widelong" class="section level3">
+<h3>Tidying: Rearranging Wide/Long</h3>
+<p>The datasets were already tidy. When creating summary statistics, I used <code>pivot_longer</code> to combine “Concentration” and “C2” into a single column. I changed the names to “ng/ul” and “pmol/ul” and named this column “Unit”. Then, I put the values into a new column called “Concentration”. Also, I used <code>pivot_wider</code> to reshape a table from long to wide. Instead of the variables for antiobiotic marker reading vertical, they read horizontal when summarizing the number of plasmids of each marker.</p>
+</div>
+<div id="joiningmerging" class="section level3">
+<h3>Joining/Merging</h3>
+<p>There are 96 rows in each dataset corresponding to 96 unique plasmids (YTK001-096). I used <code>full_join()</code> because the datasets deal with the same 96 plasmids (common variable “Name”), and I wanted to retain all of the data. After the join, no observations were lost.</p>
+<pre class="r"><code>data &lt;- full_join(info, ytk, by = &quot;Name&quot;)</code></pre>
+</div>
+<div id="wrangling" class="section level3">
+<h3>Wrangling</h3>
+<p>Using <code>mutate</code>, I added a new variable “C2” which gives the DNA concentration in pmol/ul (the original units were ng/ul). Then, I created summary statistics for the “Length” variable, which gives the DNA length in bp. I grouped by “Type” and found that aside from the cassette plasmid, Type 3 plasmids (coding sequences) have the greatest mean length. In addition, I created summary statistics for the “Concentration” variable, which gives the concentration in ng/ul. I grouped by “Marker” and found that DNA samples with the kanamycin resistance marker have the greatest mean concentration. Finally, I created summary statistics for the “C2” variable, which gives the concentration in pmol/ul. This is different from ng/ul as it is dependent on the length of the plasmid. I grouped by “Type” and “Marker” and found that Type 2 plasmids with the chloramphenicol resistance marker have a mean concentration of 0.05 pmol/ul.</p>
+<p>I also filtered for concentrations greater than 0.1 pmol/ul in order to identify DNA samples which meet this requirement. In addition, I found that the mean volume of Type 2 plasmids (promoter sequences) was 50 ul (all of them are 50 ul as this was the amount of water used to elute the DNA). Finally, I used <code>pivot_longer</code> to combine “Concentration” and “C2” into a single column, and <code>pivot_wider</code>to reshape a table from long to wide.</p>
+<pre class="r"><code>data &lt;- data %&gt;% mutate(C2 = Concentration * 10^-3/660 * 
+    10^6 * 1/Length)
+
+data %&gt;% group_by(Type) %&gt;% summarize(count = n(), 
+    mean_length = mean(Length), sd_length = sd(Length), 
+    max_length = max(Length), min_length = min(Length)) %&gt;% 
+    arrange(desc(mean_length))</code></pre>
+<pre><code>## # A tibble: 19 x 6
+##    Type         count mean_length sd_length max_length min_length
+##    &lt;chr&gt;        &lt;int&gt;       &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;
+##  1 cassette         1       5283        NA        5283       5283
+##  2 3                5       1827.      755.       2382       1000
+##  3 4                6       1600.      465.       1900       1000
+##  4 2               23       1450.      635.       2371       1000
+##  5 1                7       1000         0        1000       1000
+##  6 234              3       1000         0        1000       1000
+##  7 234r             1       1000        NA        1000       1000
+##  8 3a               7       1000         0        1000       1000
+##  9 3b               3       1000         0        1000       1000
+## 10 4a               4       1000         0        1000       1000
+## 11 4b               6       1000         0        1000       1000
+## 12 5                7       1000         0        1000       1000
+## 13 6                7       1000         0        1000       1000
+## 14 678              1       1000        NA        1000       1000
+## 15 7                5       1000         0        1000       1000
+## 16 8                3       1000         0        1000       1000
+## 17 8a               3       1000         0        1000       1000
+## 18 8b               3       1000         0        1000       1000
+## 19 entry vector     1       1000        NA        1000       1000</code></pre>
+<pre class="r"><code>data %&gt;% group_by(Marker) %&gt;% summarize(count = n(), 
+    mean_conc = mean(Concentration), sd_conc = sd(Concentration), 
+    max_conc = max(Concentration), min_conc = min(Concentration))</code></pre>
+<pre><code>## # A tibble: 4 x 6
+##   Marker          count mean_conc sd_conc max_conc min_conc
+##   &lt;chr&gt;           &lt;int&gt;     &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+## 1 Ampicillin          3      32.2   11.1      43.2     21.1
+## 2 Chloramphenicol    88      42.9   13.7      77.5     13.7
+## 3 Kanamycin           3      60.3   23.0      82.7     36.7
+## 4 Spectinomycin       2      40.2    8.05     45.9     34.5</code></pre>
+<pre class="r"><code>data %&gt;% group_by(Type, Marker) %&gt;% summarize(count = n(), 
+    mean_conc2 = mean(C2), sd_conc2 = sd(C2), max_conc2 = max(C2), 
+    min_conc2 = min(C2))</code></pre>
+<pre><code>## # A tibble: 23 x 7
+## # Groups:   Type [19]
+##    Type         Marker          count mean_conc2 sd_conc2 max_conc2 min_conc2
+##    &lt;chr&gt;        &lt;chr&gt;           &lt;int&gt;      &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+##  1 1            Chloramphenicol     7     0.0550  0.0270     0.103     0.0233
+##  2 2            Chloramphenicol    23     0.0498  0.0193     0.0803    0.0120
+##  3 234          Chloramphenicol     3     0.0582  0.0191     0.0774    0.0393
+##  4 234r         Chloramphenicol     1     0.0219 NA          0.0219    0.0219
+##  5 3            Chloramphenicol     5     0.0512  0.0248     0.0882    0.0292
+##  6 3a           Chloramphenicol     7     0.0707  0.0145     0.0906    0.0537
+##  7 3b           Chloramphenicol     3     0.0519  0.00932    0.0575    0.0411
+##  8 4            Chloramphenicol     6     0.0398  0.0111     0.0596    0.0293
+##  9 4a           Chloramphenicol     4     0.0764  0.0238     0.111     0.0573
+## 10 4b           Chloramphenicol     6     0.0669  0.0217     0.0893    0.0311
+## 11 5            Chloramphenicol     7     0.0653  0.0241     0.0995    0.0208
+## 12 6            Chloramphenicol     7     0.0746  0.0157     0.0949    0.0562
+## 13 678          Ampicillin          1     0.032  NA          0.032     0.032 
+## 14 7            Chloramphenicol     5     0.0830  0.0353     0.117     0.0281
+## 15 8            Ampicillin          1     0.0655 NA          0.0655    0.0655
+## 16 8            Kanamycin           1     0.125  NA          0.125     0.125 
+## 17 8            Spectinomycin       1     0.0522 NA          0.0522    0.0522
+## 18 8a           Ampicillin          1     0.0490 NA          0.0490    0.0490
+## 19 8a           Kanamycin           1     0.0934 NA          0.0934    0.0934
+## 20 8a           Spectinomycin       1     0.0695 NA          0.0695    0.0695
+## 21 8b           Chloramphenicol     3     0.0504  0.0172     0.0698    0.0373
+## 22 cassette     Kanamycin           1     0.0105 NA          0.0105    0.0105
+## 23 entry vector Chloramphenicol     1     0.0259 NA          0.0259    0.0259</code></pre>
+<pre class="r"><code>data %&gt;% filter(C2 &gt; 0.1) %&gt;% select(Name, Concentration) %&gt;% 
+    arrange(desc(Concentration))</code></pre>
+<pre><code>## # A tibble: 5 x 2
+##   Name    Concentration
+##   &lt;chr&gt;           &lt;dbl&gt;
+## 1 pYTK084          82.7
+## 2 pYTK087          77.5
+## 3 pYTK058          73.2
+## 4 pYTK088          72.2
+## 5 pYTK008          67.8</code></pre>
+<pre class="r"><code>data %&gt;% filter(Type == &quot;2&quot;) %&gt;% summarize(mean_vol = mean(Volume), 
+    sd_vol = sd(Volume))</code></pre>
+<pre><code>## # A tibble: 1 x 2
+##   mean_vol sd_vol
+##      &lt;dbl&gt;  &lt;dbl&gt;
+## 1       50      0</code></pre>
+<pre class="r"><code>data %&gt;% filter(C2 &gt; 0.09) %&gt;% select(Name, Type, `ng/ul` = Concentration, 
+    `pmol/ul` = C2) %&gt;% pivot_longer(c(&quot;ng/ul&quot;, &quot;pmol/ul&quot;), 
+    names_to = &quot;Unit&quot;, values_to = &quot;Concentration&quot;) %&gt;% 
+    group_by(Type, Unit) %&gt;% summarize(mean_conc = mean(Concentration)) %&gt;% 
+    select(Type, mean_conc, Unit)</code></pre>
+<pre><code>## # A tibble: 16 x 3
+## # Groups:   Type [8]
+##    Type  mean_conc Unit   
+##    &lt;chr&gt;     &lt;dbl&gt; &lt;chr&gt;  
+##  1 1       67.8    ng/ul  
+##  2 1        0.103  pmol/ul
+##  3 3a      59.8    ng/ul  
+##  4 3a       0.0906 pmol/ul
+##  5 4a      73.2    ng/ul  
+##  6 4a       0.111  pmol/ul
+##  7 5       65.6    ng/ul  
+##  8 5        0.0995 pmol/ul
+##  9 6       62.6    ng/ul  
+## 10 6        0.0949 pmol/ul
+## 11 7       74.9    ng/ul  
+## 12 7        0.113  pmol/ul
+## 13 8       82.7    ng/ul  
+## 14 8        0.125  pmol/ul
+## 15 8a      61.7    ng/ul  
+## 16 8a       0.0934 pmol/ul</code></pre>
+<pre class="r"><code>data %&gt;% group_by(Marker) %&gt;% summarize(count = n()) %&gt;% 
+    pivot_wider(names_from = &quot;Marker&quot;, values_from = &quot;count&quot;)</code></pre>
+<pre><code>## # A tibble: 1 x 4
+##   Ampicillin Chloramphenicol Kanamycin Spectinomycin
+##        &lt;int&gt;           &lt;int&gt;     &lt;int&gt;         &lt;int&gt;
+## 1          3              88         3             2</code></pre>
+</div>
+<div id="visualizing" class="section level3">
+<h3>Visualizing</h3>
+<p>Using the correlation heatmap, I found a strong positive correlation between the concentration (“Concentration”) in ng/ul and the concentration (“C2”) in pmol/ul. This was obviously expected, but the correlation was not perfect because the concentration in pmol/ul is dependent on the length of the plasmid parts. In addition, I found a negative correlation between the concentration in pmol/ul and the length of DNA. Again, this was expected, because the length of DNA is related to its mass (1 bp = 660 pg).</p>
+<p>In the “ng vs. pmol” plot, I visualized the relationship between the concentration in ng/ul and pmol/ul. As expected, there a strong linear relationship is evident. In addition, I colored the datapoints by length (bp). The points that deviate the most from the line of best fit correspond to larger plasmids (&gt; 3000 bp). This was also expected, because the length of DNA is a factor in converting from ng/ul to pmol/ul.</p>
+<p>In the “Data Plate Concentrations” figure, I visualized the DNA concentrations grouped by type of plasmid. I also colored the data by antibiotic resistance marker. I noticed the concentrations are relatively consistent across the different types of plasmids, based on the overlap of error bars. However, it appears that Type 234r and 678 plasmids have a lower concentration compared to the others. Moreover, there does not appear to be a relationship between the antibiotic resistance marker and the DNA yield.</p>
+<pre class="r"><code>cormat &lt;- data %&gt;% select_if(is.numeric) %&gt;% cor(use = &quot;pair&quot;)
+
+tidycor &lt;- cormat %&gt;% as.data.frame %&gt;% rownames_to_column(&quot;var1&quot;) %&gt;% 
+    pivot_longer(-1, names_to = &quot;var2&quot;, values_to = &quot;correlation&quot;)
+
+tidycor %&gt;% ggplot(aes(var1, var2, fill = correlation)) + 
+    geom_tile() + scale_fill_gradient2(low = &quot;red&quot;, 
+    mid = &quot;white&quot;, high = &quot;blue&quot;) + geom_text(aes(label = round(correlation, 
+    2)), color = &quot;black&quot;, size = 4) + theme(axis.text.x = element_text(angle = 90, 
+    hjust = 1)) + coord_fixed() + ggtitle(&quot;DNA Plate Correlations&quot;)</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-4-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data = data, aes(x = Concentration, y = C2, 
+    color = Length)) + geom_point() + ggtitle(&quot;ng vs. pmol&quot;) + 
+    xlab(&quot;Concentration (ng/ul)&quot;) + ylab(&quot;Concentration (pmol/ul)&quot;) + 
+    geom_smooth(method = &quot;lm&quot;, color = &quot;red&quot;) + scale_x_continuous(breaks = seq(0, 
+    100, by = 10))</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-4-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>data %&gt;% filter(Type != c(&quot;entry vector&quot;, &quot;cassette&quot;)) %&gt;% 
+    ggplot(aes(x = Type, fill = Marker)) + geom_bar(aes(y = C2), 
+    stat = &quot;summary&quot;, fun = mean) + ylab(&quot;Concentration (pmol/ul)&quot;) + 
+    geom_errorbar(aes(y = C2), stat = &quot;summary&quot;, width = 0.5) + 
+    ggtitle(&quot;DNA Plate Concentrations&quot;)</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-4-3.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="dimensionality-reduction" class="section level3">
+<h3>Dimensionality Reduction</h3>
+<p>I chose the number of clusters using the silhouette method. I found that k = 2 maximizes the silhouette width, giving a value greater than 0.9. This indicates that the clusters are valid. Then, I ran a PAM cluster analysis and visualized the results with “Concentration” on the x-axis and C2 on the y-axis. I found that the cluster which deviates from the linear relationship between “Concentration” and “C2” has a greater average length (2398.5 vs. 1000). In addition, this cluster has a similar average concentration in ng/ul (42.6 vs. 45.1 ng/ul) but a different average concentration in pmol/ul (0.0645 vs. 0.0304). Once again, this shows that the conversion from ng/ul to pmol/ul depends on the size of the plasmid. The difference in the average volume of the clusters is trivial since each well has the same starting volume of 50 ul. The average silhouette width of 0.924 indicates a strong fit.</p>
+<pre class="r"><code>library(cluster)
+clust_dat &lt;- data %&gt;% dplyr::select(Concentration, 
+    Length, Volume, C2)
+
+sil_width &lt;- vector()
+for (i in 2:10) {
+    kms &lt;- kmeans(clust_dat, centers = i)
+    sil &lt;- silhouette(kms$cluster, dist(clust_dat))
+    sil_width[i] &lt;- mean(sil[, 3])
+}
+ggplot() + geom_line(aes(x = 1:10, y = sil_width)) + 
+    scale_x_continuous(name = &quot;k&quot;, breaks = 1:10)</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-5-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>pam1 &lt;- clust_dat %&gt;% pam(k = 2)
+pam1</code></pre>
+<pre><code>## Medoids:
+##      ID Concentration Length Volume         C2
+## [1,] 67         42.28   1000     50 0.06406061
+## [2,] 25         43.53   2365     50 0.02788776
+## Clustering vector:
+##  [1] 1 1 1 1 1 1 1 1 2 1 1 2 1 1 1 1 2 1 1 1 1 2 1 1 2 1 2 1 1 2 2 2 2 2 1 1 1 1
+## [39] 1 1 1 1 1 1 1 1 1 1 1 1 2 2 1 2 1 2 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+## [77] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 2
+## Objective function:
+##    build     swap 
+## 66.15656 66.15656 
+## 
+## Available components:
+##  [1] &quot;medoids&quot;    &quot;id.med&quot;     &quot;clustering&quot; &quot;objective&quot;  &quot;isolation&quot; 
+##  [6] &quot;clusinfo&quot;   &quot;silinfo&quot;    &quot;diss&quot;       &quot;call&quot;       &quot;data&quot;</code></pre>
+<pre class="r"><code>pamclust &lt;- clust_dat %&gt;% mutate(cluster = as.factor(pam1$clustering))
+
+pamclust %&gt;% ggplot(aes(x = Concentration, y = C2, 
+    color = cluster)) + geom_point() + ylab(&quot;Concentration (pmol/ul)&quot;) + 
+    xlab(&quot;Concentration (ng/ul)&quot;)</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-5-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>pamclust %&gt;% group_by(cluster) %&gt;% summarize_if(is.numeric, 
+    mean, na.rm = T)</code></pre>
+<pre><code>## # A tibble: 2 x 5
+##   cluster Concentration Length Volume     C2
+##   &lt;fct&gt;           &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
+## 1 1                42.6  1000      50 0.0645
+## 2 2                45.1  2398.     50 0.0304</code></pre>
+<pre class="r"><code>pam1$silinfo$avg.width</code></pre>
+<pre><code>## [1] 0.9240501</code></pre>
+<pre><code>## R version 3.6.1 (2019-07-05)
+## Platform: x86_64-pc-linux-gnu (64-bit)
+## Running under: Ubuntu 18.04.5 LTS
+## 
+## Matrix products: default
+## BLAS:   /stor/system/opt/R/R-3.6.1/lib/R/lib/libRblas.so
+## LAPACK: /stor/system/opt/R/R-3.6.1/lib/R/lib/libRlapack.so
+## 
+## locale:
+##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+##  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+##  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+##  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+##  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+## [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+##  [1] cluster_2.1.0   forcats_0.5.0   stringr_1.4.0   dplyr_1.0.2    
+##  [5] purrr_0.3.4     readr_1.4.0     tidyr_1.1.2     tibble_3.0.4   
+##  [9] ggplot2_3.3.3   tidyverse_1.3.0
+## 
+## loaded via a namespace (and not attached):
+##  [1] tidyselect_1.1.0  xfun_0.20         lattice_0.20-41   splines_3.6.1    
+##  [5] haven_2.3.1       colorspace_2.0-0  vctrs_0.3.6       generics_0.1.0   
+##  [9] htmltools_0.5.0   mgcv_1.8-33       yaml_2.2.1        utf8_1.1.4       
+## [13] rlang_0.4.10      pillar_1.4.7      glue_1.4.2        withr_2.3.0      
+## [17] DBI_1.1.0         dbplyr_2.0.0      modelr_0.1.8      readxl_1.3.1     
+## [21] lifecycle_0.2.0   munsell_0.5.0     blogdown_0.20     gtable_0.3.0     
+## [25] cellranger_1.1.0  rvest_0.3.6       evaluate_0.14     labeling_0.4.2   
+## [29] knitr_1.30        curl_4.3          fansi_0.4.1       broom_0.7.3      
+## [33] Rcpp_1.0.5        scales_1.1.1      backports_1.2.1   formatR_1.7      
+## [37] jsonlite_1.7.2    farver_2.0.3      fs_1.5.0          hms_0.5.3        
+## [41] digest_0.6.27     stringi_1.5.3     bookdown_0.21     grid_3.6.1       
+## [45] cli_2.2.0         tools_3.6.1       magrittr_2.0.1    crayon_1.3.4     
+## [49] pkgconfig_2.0.3   Matrix_1.3-2      ellipsis_0.3.1    xml2_1.3.2       
+## [53] reprex_0.3.0      lubridate_1.7.9.2 assertthat_0.2.1  rmarkdown_2.6    
+## [57] httr_1.4.2        rstudioapi_0.13   R6_2.5.0          nlme_3.1-151     
+## [61] compiler_3.6.1</code></pre>
+<pre><code>## [1] &quot;2021-05-09 20:48:57 CDT&quot;</code></pre>
+<pre><code>##                                        sysname 
+##                                        &quot;Linux&quot; 
+##                                        release 
+##                           &quot;4.15.0-142-generic&quot; 
+##                                        version 
+## &quot;#146-Ubuntu SMP Tue Apr 13 01:11:19 UTC 2021&quot; 
+##                                       nodename 
+##                   &quot;educcomp02.ccbb.utexas.edu&quot; 
+##                                        machine 
+##                                       &quot;x86_64&quot; 
+##                                          login 
+##                                      &quot;unknown&quot; 
+##                                           user 
+##                                       &quot;kyh283&quot; 
+##                                 effective_user 
+##                                       &quot;kyh283&quot;</code></pre>
+</div>
+</div>
+
+            
+        <hr>         <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div> 
+            </div>
+          </div>
+
+   <hr>  <div class="disqus">
+  <div id="disqus_thread"></div>
+  <script type="text/javascript">
+
+    (function() {
+      
+      
+      if (window.location.hostname == "localhost")
+        return;
+
+      var disqus_shortname = '';
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div> 
+        </div>
+      </div>
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="../../js/docs.min.js"></script>
+<script src="../../js/main.js"></script>
+
+<script src="../../js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>

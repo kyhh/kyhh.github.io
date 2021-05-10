@@ -1,0 +1,231 @@
+---
+title: 'Project 2: Modeling, Testing, and Predicting'
+author: "SDS348"
+date: ''
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE, fig.align = "center", warning = F, message = F, tidy=T, tidy.opts=list(width.cutoff=50), R.options=list(max.print=100,dplyr.print_max=100))
+```
+
+## Kevin Huang kyh283
+
+### 0. Introduction
+
+The dataset is sourced from a study on income dynamics (https://www.jstor.org/stable/2096586?seq=1) and reports individual log wages (lwage) from 1976 to 1982. For each individual, years of full-time work (exp), weeks worked (wks), and years of education (ed). Binary variables include marriage status (married), sex (sex), residence in the south (south), and more (https://vincentarelbundock.github.io/Rdatasets/doc/Ecdat/Wages.html). In total, there are 4,165 observations of 12 variables.
+
+```{R}
+library(tidyverse)
+wage<-read_csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vSMFuWbZe2hP3z20FIfGGQzNxZMoeUCavdNg29c-07Yq1rp47n4Z3XRyaeKNCuO3HwiH1q0uzfrNLhG/pub?output=csv")
+```
+
+### 1. MANOVA
+
+A total of 4 tests were performed, and the probability of making at least one type I error is 18.5%. The significance level was adjusted accordingly to 0.0125. 
+
+A MANOVA was performed to determine if log wage and/or years of education differed by sex. Seeing as the p-value is less than 0.0125, univariate ANOVAs were performed to determine which responses differed by sex. It was found that only log wage differed by sex (p < 2.2e-16) and the difference in years of education is insignficant (p = 937). Finally, a post-hoc t-test was performed, but since the variable sex has only 2 groups, it only serves as a confirmation of the previous conclusions. 
+
+```{R}
+man<-manova(cbind(lwage,ed)~sex,data=wage)
+summary(man)
+summary.aov(man)
+pairwise.t.test(wage$lwage, wage$sex, p.adj = "none")
+1-0.95^4
+0.05/4
+```
+
+### 2. Randomization Test
+
+A mean difference randomization test was performed to determine whether the mean difference in log wage between men and women is significant. The null hypothesis states that there is no mean difference in log wage between men and women, and the alternative hypothesis states that there is a mean difference in log wage. The null distribution of differences is given, and it was found that 0% of these observations are greater than the actual mean difference of 0.412. Therefore, the p-value is 0 and it can be concluded that there is a significant difference in the mean log wage between men and women. 
+
+```{R}
+wage%>%group_by(sex)%>%summarize(mean_wage=mean(lwage))
+obs_diff<-6.729774-6.255308	
+
+set.seed(348)
+diffs<-vector()
+
+for(i in 1:1000){
+temp <- wage %>% mutate(wage = sample(wage$lwage))
+diffs[i] <- temp%>%summarize(mean(wage[sex=="male"]) - mean(wage[sex=="female"]))%>%pull
+}
+
+hist(diffs)
+abline(v=obs_diff,col="red",lty=2)
+
+mean(diffs>obs_diff)
+```
+
+### 3. Linear Regression
+
+A linear regression was performed to predict log wage from years of education and years of full-time work experience. The intercept of 6.677 is the predicted log wage for individuals with average work experience and not living in a standard metropolitan statistical area (SMSA). The coefficient smsayes indicates that individuals living in a SMSA with average work experience have a predicted log wage that is 2.071e-01 greater than individuals not living in a SMSA. The coefficient exp_c indicates that the slope for work experience on log wage for individuals not living in a SMSA is 8.380e-03. Finally, the smsayes:exp_c coefficient indicates the difference in slopes is -6.242e-05 (not significant).
+
+The R-squared is 0.0893, indicating that only 8.93% of the variation in the outcome is explained by the model. Graphically, the assumption of linearity is not met, as there is a large spread in the data. However, there does appear to be a slight positive correlation between years of experience and log wage. The QQ-plot of model residuals confirms that the residuals are normally distributed. The Breuch-Pagan test was performed, leading to the rejection of the null hypothesis of homoskedasticity. The regression was redone using heteroskedasticity robust standard errors, but each of the significant coefficients discussed above remained significant. 
+
+```{R}
+library(lmtest)
+library(sandwich)
+wage$lwage_c<-wage$lwage-mean(wage$lwage)
+wage$exp_c<-wage$exp-mean(wage$exp)
+wage$ed_c<-wage$ed-mean(wage$ed)
+model<-lm(lwage~smsa*exp_c,data=wage)
+summary(model)
+
+wage %>%  ggplot(aes(exp_c, lwage, color = smsa)) + 
+    geom_point() + geom_smooth(method = "lm") + xlab("Years of Experience") + ylab("Log of Wage")
+
+summary(model)$r.sq
+
+bptest(model)
+coeftest(model, vcov = vcovHC(model))
+qqnorm(model$residuals, main = "QQ-plot of Model Residuals")
+qqline(model$residuals, col = "red")
+```
+
+### 4. Bootstrapped Standard Errors
+
+Compared to the models using original SEs and robust SEs, each of the coefficients are much smaller. For instance, this model predicts that individuals living in a SMSA with average work experience have a predicted log wage that is only 0.0145 greater than individuals not living in a SMSA.
+
+```{R}
+set.seed(348)
+samp_distn <- replicate(5000, {
+    boot_dat <- sample_frac(wage, replace = T)
+    fit <- lm(lwage~smsa*exp_c, data = boot_dat)
+    coef(fit)
+})
+samp_distn %>% t %>% as.data.frame %>% summarize_all(sd)
+```
+
+### 5. Logistic Regression Part 1
+
+A logistic regression model was used to predict marriage status from log wage and length of education. The lwage coefficient indicates that an increase in the log wage of 1 unit multiplies the odds of being married by 8.263 (holding education length constant). The ed coefficient indicates that an increase in education length of 1 unit multplies the odds of being married by 0.864 (holding log wage constant).
+
+The accuracy, sensitivity (TPR), specificity (TNR), precision (PPV), and AUC are reported in the table below. The accuracy is fairly good (0.820), and the TPR indicates that the probability of correctly predicting that someone is married is high (0.983). However, the TNR is low and indicates that the probability of predicting not married for people that are not married is only 0.105. The precision indicates that the proportion classified as married who actually are is 0.828. Finally, the AUC of 0.726 indicates that the model is fair but not necessarily good.  
+
+```{R}
+library(plotROC)
+wage <- wage %>% mutate(y = ifelse(married == "yes", 1, 0))
+
+fit<-glm(y~lwage+ed,data=wage,family="binomial")
+summary(fit)
+exp(coef(fit))
+
+class_diag<-function(probs,truth){
+  
+  tab<-table(factor(probs>.5,levels=c("FALSE","TRUE")),truth)
+  acc=sum(diag(tab))/sum(tab)
+  sens=tab[2,2]/colSums(tab)[2]
+  spec=tab[1,1]/colSums(tab)[1]
+  ppv=tab[2,2]/rowSums(tab)[2]
+
+  if(is.numeric(truth)==FALSE & is.logical(truth)==FALSE) truth<-as.numeric(truth)-1
+  
+  ord<-order(probs, decreasing=TRUE)
+  probs <- probs[ord]; truth <- truth[ord]
+  
+  TPR=cumsum(truth)/max(1,sum(truth)) 
+  FPR=cumsum(!truth)/max(1,sum(!truth))
+  
+  dup<-c(probs[-1]>=probs[-length(probs)], FALSE)
+  TPR<-c(0,TPR[!dup],1); FPR<-c(0,FPR[!dup],1)
+  
+  n <- length(TPR)
+  auc<- sum( ((TPR[-1]+TPR[-n])/2) * (FPR[-1]-FPR[-n]) )
+
+  data.frame(acc,sens,spec,ppv,auc)
+}
+
+wage$prob <- predict(fit, type = "response")
+class_diag(wage$prob,wage$y)
+
+truth <- wage$y
+table(prediction = as.numeric(wage$prob > 0.5), truth)
+
+wage$married<-as.factor(wage$married)
+wage$logit<-predict(fit,type="link") 
+
+wage%>%ggplot()+geom_density(aes(logit,color=married,fill=married), alpha=.4)+
+  theme(legend.position=c(.85,.85))+geom_vline(xintercept=0)+xlab("predictor (logit)")
+
+ROCplot <- ggplot(wage) + geom_roc(aes(d = y, 
+    m = prob), n.cuts = 0)
+ROCplot
+calc_auc(ROCplot)
+```
+
+### 5. Logistic Regression Part 2
+
+A logistic regression predicting marriage status from all of the other variables was performed. The accuracy is good (0.921), and the TPR indicates that the probability of correctly predicting that someone is married is very high (0.996). However, the TNR is relatively low and indicates that the probability of predicting not married for people that are not married is 0.591 (better than previous model). The precision indicates that the proportion classified as married who actually are is 0.915. Finally, the AUC of 0.868 indicates that the model is good.
+
+A 10-fold CV was also performed, and the AUC was found to be 0.864. This is very similar to the in-sample AUC and indicates that the model is good. In addition, the accuracy, TPR, TNR, and precision are reported, and they are comparable to the in-sample metrics. 
+
+Finally, LASSO was performed, and the variables exp (years of experience), sex, black, and lwage (log wage) were retained. The 10-fold CV was performed with these variables, and the AUC was found to be 0.860. This is very similar to the AUCs above and indicates that the model is good but not necessarily better than the previous models. 
+
+```{R}
+fit2<-glm(y~exp+wks+bluecol+ind+south+smsa+sex+union+ed+black+lwage,data=wage,family="binomial")
+summary(fit2)
+
+wage$prob2 <- predict(fit2, type = "response")
+class_diag(wage$prob2,wage$y)
+
+set.seed(1234)
+k = 10
+
+data <- wage[sample(nrow(wage)), ] 
+folds <- cut(seq(1:nrow(wage)), breaks = k, labels = F)  
+
+diags <- NULL
+for (i in 1:k) {
+    train <- data[folds != i, ]  
+    test <- data[folds == i, ]  
+    
+    truth <- test$y
+    
+    fit <- glm(y~exp+wks+bluecol+ind+south+smsa+sex+union+ed+black+lwage, family = "binomial", data = train)
+    probs <- predict(fit, newdata = test, type = "response")
+    
+    diags <- rbind(diags, class_diag(probs, truth))  
+}
+
+summarize_all(diags, mean)
+
+library(glmnet)
+set.seed(1234)
+y <- as.matrix(wage$y)
+x <- model.matrix(y~exp+wks+bluecol+ind+south+smsa+sex+union+ed+black+lwage, data = wage)[, -1]
+cv <- cv.glmnet(x, y, family = "binomial")
+lasso <- glmnet(x, y, family = "binomial", lambda = cv$lambda.1se)
+coef(lasso)
+
+set.seed(1234)
+k = 10
+
+data <- wage[sample(nrow(wage)), ] 
+folds <- cut(seq(1:nrow(wage)), breaks = k, labels = F)  
+
+diags <- NULL
+for (i in 1:k) {
+    train <- data[folds != i, ]  
+    test <- data[folds == i, ]  
+    
+    truth <- test$y
+    
+    fit <- glm(y~exp+sex+black+lwage, family = "binomial", data = train)
+    probs <- predict(fit, newdata = test, type = "response")
+    
+    diags <- rbind(diags, class_diag(probs, truth))  
+}
+
+summarize_all(diags, mean)
+```
+
+```{R, echo=F}
+sessionInfo()
+Sys.time()
+Sys.info()
+```

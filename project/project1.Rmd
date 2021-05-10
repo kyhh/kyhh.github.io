@@ -1,0 +1,124 @@
+---
+title: 'Project 1: Exploratory Data Analysis'
+author: "SDS348"
+date: ''
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE, fig.align = "center", warning = F, message = F, tidy=T, tidy.opts=list(width.cutoff=50), R.options=list(max.print=100,dplyr.print_max=100))
+```
+
+## Kevin Huang kyh283
+
+### Introduction
+
+I gathered general data on Dueber's 96-plasmid yeast toolkit (https://pubs.acs.org/doi/10.1021/sb500366v) as well as data relating to a specific prep of these 96 plasmids. The 96-plasmid yeast toolkit is a standardized set of DNA parts which enables the high-throughput, combinatorial assembly of yeast genes. This is interesting to me because I am currently working with this particular toolkit in lab. 
+
+The first dataset (info) contains the plasmid name, part type, part description, and E. coli antibiotic marker. This is provided by Dueber in his paper. The second dataset (ytk) contains the well number, plasmid name, concentration (ng), length (bp), and volume (ul) for one particular 96-well DNA plate. The data can be be combined because the variables each correlate to the plasmid name (YTK001-096), which is a common variable in the datasets. I expect there will be an association between the type of plasmid and the length. For instance, I think that coding sequences should have a greater average length than terminators. 
+
+```{R}
+library(tidyverse)
+info <- read_csv("https://docs.google.com/spreadsheets/d/1dw3Dnj5X_U5DDC_ijWEhpWhSMaZY6eveDPK1ZwXBGOI/export?gid=0&format=csv")
+ytk <- read_csv("https://docs.google.com/spreadsheets/d/1WnC1S73Q8W6LKGrxRLHrgmePQHFdqRPqFLSdb3E4Hao/export?gid=0&format=csv")
+```
+
+### Tidying: Rearranging Wide/Long
+
+The datasets were already tidy. When creating summary statistics, I used `pivot_longer` to combine "Concentration" and "C2" into a single column. I changed the names to "ng/ul" and "pmol/ul" and named this column "Unit". Then, I put the values into a new column called "Concentration". Also, I used `pivot_wider` to reshape a table from long to wide. Instead of the variables for antiobiotic marker reading vertical, they read horizontal when summarizing the number of plasmids of each marker.
+
+### Joining/Merging
+
+There are 96 rows in each dataset corresponding to 96 unique plasmids (YTK001-096). I used `full_join()` because the datasets deal with the same 96 plasmids (common variable "Name"), and I wanted to retain all of the data. After the join, no observations were lost. 
+
+```{R}
+data <- full_join(info, ytk, by="Name")
+```
+
+### Wrangling
+
+Using `mutate`, I added a new variable "C2" which gives the DNA concentration in pmol/ul (the original units were ng/ul). Then, I created summary statistics for the "Length" variable, which gives the DNA length in bp. I grouped by "Type" and found that aside from the cassette plasmid, Type 3 plasmids (coding sequences) have the greatest mean length. In addition, I created summary statistics for the "Concentration" variable, which gives the concentration in ng/ul. I grouped by "Marker" and found that DNA samples with the kanamycin resistance marker have the greatest mean concentration. Finally, I created summary statistics for the "C2" variable, which gives the concentration in pmol/ul. This is different from ng/ul as it is dependent on the length of the plasmid. I grouped by "Type" and "Marker" and found that Type 2 plasmids with the chloramphenicol resistance marker have a mean concentration of 0.05 pmol/ul. 
+
+I also filtered for concentrations greater than 0.1 pmol/ul in order to identify DNA samples which meet this requirement. In addition, I found that the mean volume of Type 2 plasmids (promoter sequences) was 50 ul (all of them are 50 ul as this was the amount of water used to elute the DNA). Finally, I used `pivot_longer` to combine "Concentration" and "C2" into a single column, and `pivot_wider`to reshape a table from long to wide. 
+
+```{R}
+data <- data %>% mutate(C2 = Concentration*10^-3/660*10^6*1/Length)
+
+data %>% group_by(Type) %>% summarize(count = n(), mean_length = mean(Length), sd_length = sd(Length), max_length = max(Length), min_length = min(Length)) %>% arrange(desc(mean_length))
+
+data %>% group_by(Marker) %>% summarize(count = n(), mean_conc = mean(Concentration), sd_conc = sd(Concentration), max_conc = max(Concentration), min_conc = min(Concentration))
+
+data %>% group_by(Type, Marker) %>% summarize(count = n(), mean_conc2 = mean(C2), sd_conc2 = sd(C2), max_conc2 = max(C2), min_conc2 = min(C2))
+
+data %>% filter(C2 > 0.1) %>% select(Name, Concentration) %>% arrange(desc(Concentration))
+
+data %>% filter(Type == "2") %>% summarize(mean_vol = mean(Volume), sd_vol = sd(Volume))
+
+data %>% filter(C2 > 0.09) %>% select(Name, Type, "ng/ul" = Concentration, "pmol/ul" = C2) %>% pivot_longer(c("ng/ul","pmol/ul"), names_to="Unit", values_to="Concentration") %>% group_by(Type, Unit) %>% summarize(mean_conc = mean(Concentration)) %>% select(Type, mean_conc, Unit)
+
+data %>% group_by(Marker) %>% summarize(count = n()) %>% pivot_wider(names_from="Marker", values_from="count")
+
+```
+
+### Visualizing
+
+Using the correlation heatmap, I found a strong positive correlation between the concentration ("Concentration") in ng/ul and the concentration ("C2") in pmol/ul. This was obviously expected, but the correlation was not perfect because the concentration in pmol/ul is dependent on the length of the plasmid parts. In addition, I found a negative correlation between the concentration in pmol/ul and the length of DNA. Again, this was expected, because the length of DNA is related to its mass (1 bp = 660 pg). 
+
+In the "ng vs. pmol" plot, I visualized the relationship between the concentration in ng/ul and pmol/ul. As expected, there a strong linear relationship is evident. In addition, I colored the datapoints by length (bp). The points that deviate the most from the line of best fit correspond to larger plasmids (> 3000 bp). This was also expected, because the length of DNA is a factor in converting from ng/ul to pmol/ul. 
+
+In the "Data Plate Concentrations" figure, I visualized the DNA concentrations grouped by type of plasmid. I also colored the data by antibiotic resistance marker. I noticed the concentrations are relatively consistent across the different types of plasmids, based on the overlap of error bars. However, it appears that Type 234r and 678 plasmids have a lower concentration compared to the others. Moreover, there does not appear to be a relationship between the antibiotic resistance marker and the DNA yield. 
+
+```{R}
+cormat <- data %>% select_if(is.numeric) %>% cor(use = "pair")
+
+tidycor <- cormat %>% as.data.frame %>% rownames_to_column("var1") %>%  pivot_longer(-1, names_to = "var2", values_to = "correlation")
+ 
+tidycor %>% ggplot(aes(var1, var2, fill = correlation)) + geom_tile() + scale_fill_gradient2(low = "red", mid = "white", high = "blue") + geom_text(aes(label = round(correlation, 2)), color = "black", size = 4) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + coord_fixed() + ggtitle("DNA Plate Correlations")
+
+ggplot(data = data, aes(x = Concentration, y = C2, 
+    color = Length)) + geom_point() + ggtitle("ng vs. pmol") + 
+    xlab("Concentration (ng/ul)") + ylab("Concentration (pmol/ul)") + geom_smooth(method = "lm", color = "red") + scale_x_continuous(breaks = seq(0, 100, by = 10))
+
+data %>% filter(Type != c("entry vector", "cassette")) %>% ggplot(aes(x = Type, fill = Marker)) + geom_bar(aes(y = C2), stat = "summary", fun = mean) + ylab("Concentration (pmol/ul)") + geom_errorbar(aes(y = C2), stat = "summary", width = 0.5) + ggtitle("DNA Plate Concentrations")
+```
+
+### Dimensionality Reduction
+
+I chose the number of clusters using the silhouette method. I found that k = 2 maximizes the silhouette width, giving a value greater than 0.9. This indicates that the clusters are valid. Then, I ran a PAM cluster analysis and visualized the results with "Concentration" on the x-axis and C2 on the y-axis. I found that the cluster which deviates from the linear relationship between "Concentration" and "C2" has a greater average length (2398.5 vs. 1000). In addition, this cluster has a similar average concentration in ng/ul (42.6 vs. 45.1 ng/ul) but a different average concentration in pmol/ul (0.0645 vs. 0.0304). Once again, this shows that the conversion from ng/ul to pmol/ul depends on the size of the plasmid. The difference in the average volume of the clusters is trivial since each well has the same starting volume of 50 ul. The average silhouette width of 0.924 indicates a strong fit. 
+
+```{R}
+library(cluster)
+clust_dat <- data %>% dplyr::select(Concentration, Length, Volume, C2)
+
+sil_width<-vector() 
+for(i in 2:10){  
+  kms <- kmeans(clust_dat, centers=i) 
+  sil <- silhouette(kms$cluster, dist(clust_dat))
+  sil_width[i]<-mean(sil[,3])
+}
+ggplot()+geom_line(aes(x=1:10,y=sil_width))+scale_x_continuous(name="k", breaks=1:10)
+
+pam1 <- clust_dat %>% pam(k = 2)
+pam1
+pamclust <- clust_dat %>% mutate(cluster = as.factor(pam1$clustering)) 
+
+pamclust %>% ggplot(aes(x = Concentration, y = C2, color = cluster)) + geom_point() + ylab("Concentration (pmol/ul)") + xlab("Concentration (ng/ul)")
+
+pamclust %>% group_by(cluster) %>% summarize_if(is.numeric,mean,na.rm=T)
+
+pam1$silinfo$avg.width
+```
+```{R, echo=F}
+sessionInfo()
+Sys.time()
+Sys.info()
+```
+
+
+
+
+

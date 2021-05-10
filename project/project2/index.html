@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Kevin Huang" />
+    
+    <link rel="shortcut icon" type="image/x-icon" href="../../img/favicon.ico">
+    <title>Project 2: Modeling, Testing, and Predicting</title>
+    <meta name="generator" content="Hugo 0.83.1" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="../../css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="../../"><i class="fa fa-home"></i></a>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div class="navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="../../post/">BLOG</a></li>
+        
+        <li><a href="../../projects/">PROJECTS</a></li>
+        
+        <li><a href="../../resume/">RESUME</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="../../project/project2/">Project 2: Modeling, Testing, and Predicting</a></strong>
+          </h3>
+        </div>
+ 
+<div class="blog-title">
+          <h4>
+         January 1, 0001 
+            &nbsp;&nbsp;
+            
+          </h4>
+        </div>
+
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+
+<div id="kevin-huang-kyh283" class="section level2">
+<h2>Kevin Huang kyh283</h2>
+<div id="introduction" class="section level3">
+<h3>0. Introduction</h3>
+<p>The dataset is sourced from a study on income dynamics (<a href="https://www.jstor.org/stable/2096586?seq=1" class="uri">https://www.jstor.org/stable/2096586?seq=1</a>) and reports individual log wages (lwage) from 1976 to 1982. For each individual, years of full-time work (exp), weeks worked (wks), and years of education (ed). Binary variables include marriage status (married), sex (sex), residence in the south (south), and more (<a href="https://vincentarelbundock.github.io/Rdatasets/doc/Ecdat/Wages.html" class="uri">https://vincentarelbundock.github.io/Rdatasets/doc/Ecdat/Wages.html</a>). In total, there are 4,165 observations of 12 variables.</p>
+<pre class="r"><code>library(tidyverse)
+wage &lt;- read_csv(&quot;https://docs.google.com/spreadsheets/d/e/2PACX-1vSMFuWbZe2hP3z20FIfGGQzNxZMoeUCavdNg29c-07Yq1rp47n4Z3XRyaeKNCuO3HwiH1q0uzfrNLhG/pub?output=csv&quot;)</code></pre>
+</div>
+<div id="manova" class="section level3">
+<h3>1. MANOVA</h3>
+<p>A total of 4 tests were performed, and the probability of making at least one type I error is 18.5%. The significance level was adjusted accordingly to 0.0125.</p>
+<p>A MANOVA was performed to determine if log wage and/or years of education differed by sex. Seeing as the p-value is less than 0.0125, univariate ANOVAs were performed to determine which responses differed by sex. It was found that only log wage differed by sex (p &lt; 2.2e-16) and the difference in years of education is insignficant (p = 937). Finally, a post-hoc t-test was performed, but since the variable sex has only 2 groups, it only serves as a confirmation of the previous conclusions.</p>
+<pre class="r"><code>man &lt;- manova(cbind(lwage, ed) ~ sex, data = wage)
+summary(man)</code></pre>
+<pre><code>##             Df  Pillai approx F num Df den Df    Pr(&gt;F)    
+## sex          1 0.12467   296.39      2   4162 &lt; 2.2e-16 ***
+## Residuals 4163                                             
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>summary.aov(man)</code></pre>
+<pre><code>##  Response lwage :
+##               Df Sum Sq Mean Sq F value    Pr(&gt;F)    
+## sex            1  93.69  93.691  491.72 &lt; 2.2e-16 ***
+## Residuals   4163 793.21   0.191                      
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+##  Response ed :
+##               Df Sum Sq Mean Sq F value Pr(&gt;F)
+## sex            1      0  0.0483  0.0062 0.9372
+## Residuals   4163  32366  7.7748</code></pre>
+<pre class="r"><code>pairwise.t.test(wage$lwage, wage$sex, p.adj = &quot;none&quot;)</code></pre>
+<pre><code>## 
+##  Pairwise comparisons using t tests with pooled SD 
+## 
+## data:  wage$lwage and wage$sex 
+## 
+##      female
+## male &lt;2e-16
+## 
+## P value adjustment method: none</code></pre>
+<pre class="r"><code>1 - 0.95^4</code></pre>
+<pre><code>## [1] 0.1854938</code></pre>
+<pre class="r"><code>0.05/4</code></pre>
+<pre><code>## [1] 0.0125</code></pre>
+</div>
+<div id="randomization-test" class="section level3">
+<h3>2. Randomization Test</h3>
+<p>A mean difference randomization test was performed to determine whether the mean difference in log wage between men and women is significant. The null hypothesis states that there is no mean difference in log wage between men and women, and the alternative hypothesis states that there is a mean difference in log wage. The null distribution of differences is given, and it was found that 0% of these observations are greater than the actual mean difference of 0.412. Therefore, the p-value is 0 and it can be concluded that there is a significant difference in the mean log wage between men and women.</p>
+<pre class="r"><code>wage %&gt;% group_by(sex) %&gt;% summarize(mean_wage = mean(lwage))</code></pre>
+<pre><code>## # A tibble: 2 x 2
+##   sex    mean_wage
+##   &lt;chr&gt;      &lt;dbl&gt;
+## 1 female      6.26
+## 2 male        6.73</code></pre>
+<pre class="r"><code>obs_diff &lt;- 6.729774 - 6.255308
+
+set.seed(348)
+diffs &lt;- vector()
+
+for (i in 1:1000) {
+    temp &lt;- wage %&gt;% mutate(wage = sample(wage$lwage))
+    diffs[i] &lt;- temp %&gt;% summarize(mean(wage[sex == 
+        &quot;male&quot;]) - mean(wage[sex == &quot;female&quot;])) %&gt;% 
+        pull
+}
+
+hist(diffs)
+abline(v = obs_diff, col = &quot;red&quot;, lty = 2)</code></pre>
+<p><img src="../../project/project2_files/figure-html/unnamed-chunk-3-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>mean(diffs &gt; obs_diff)</code></pre>
+<pre><code>## [1] 0</code></pre>
+</div>
+<div id="linear-regression" class="section level3">
+<h3>3. Linear Regression</h3>
+<p>A linear regression was performed to predict log wage from years of education and years of full-time work experience. The intercept of 6.677 is the predicted log wage for individuals with average work experience and not living in a standard metropolitan statistical area (SMSA). The coefficient smsayes indicates that individuals living in a SMSA with average work experience have a predicted log wage that is 2.071e-01 greater than individuals not living in a SMSA. The coefficient exp_c indicates that the slope for work experience on log wage for individuals not living in a SMSA is 8.380e-03. Finally, the smsayes:exp_c coefficient indicates the difference in slopes is -6.242e-05 (not significant).</p>
+<p>The R-squared is 0.0893, indicating that only 8.93% of the variation in the outcome is explained by the model. Graphically, the assumption of linearity is not met, as there is a large spread in the data. However, there does appear to be a slight positive correlation between years of experience and log wage. The QQ-plot of model residuals confirms that the residuals are normally distributed. The Breuch-Pagan test was performed, leading to the rejection of the null hypothesis of homoskedasticity. The regression was redone using heteroskedasticity robust standard errors, but each of the significant coefficients discussed above remained significant.</p>
+<pre class="r"><code>library(lmtest)
+library(sandwich)
+wage$lwage_c &lt;- wage$lwage - mean(wage$lwage)
+wage$exp_c &lt;- wage$exp - mean(wage$exp)
+wage$ed_c &lt;- wage$ed - mean(wage$ed)
+model &lt;- lm(lwage ~ smsa * exp_c, data = wage)
+summary(model)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = lwage ~ smsa * exp_c, data = wage)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -2.36038 -0.28063  0.02539  0.27139  1.89267 
+## 
+## Coefficients:
+##                 Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)    6.541e+00  1.163e-02 562.183  &lt; 2e-16 ***
+## smsayes        2.071e-01  1.438e-02  14.404  &lt; 2e-16 ***
+## exp_c          8.380e-03  1.100e-03   7.619 3.13e-14 ***
+## smsayes:exp_c -6.242e-05  1.335e-03  -0.047    0.963    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 0.4406 on 4161 degrees of freedom
+## Multiple R-squared:  0.08931,    Adjusted R-squared:  0.08865 
+## F-statistic:   136 on 3 and 4161 DF,  p-value: &lt; 2.2e-16</code></pre>
+<pre class="r"><code>wage %&gt;% ggplot(aes(exp_c, lwage, color = smsa)) + 
+    geom_point() + geom_smooth(method = &quot;lm&quot;) + xlab(&quot;Years of Experience&quot;) + 
+    ylab(&quot;Log of Wage&quot;)</code></pre>
+<p><img src="../../project/project2_files/figure-html/unnamed-chunk-4-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>summary(model)$r.sq</code></pre>
+<pre><code>## [1] 0.08930855</code></pre>
+<pre class="r"><code>bptest(model)</code></pre>
+<pre><code>## 
+##  studentized Breusch-Pagan test
+## 
+## data:  model
+## BP = 19.313, df = 3, p-value = 0.0002355</code></pre>
+<pre class="r"><code>coeftest(model, vcov = vcovHC(model))</code></pre>
+<pre><code>## 
+## t test of coefficients:
+## 
+##                  Estimate  Std. Error  t value  Pr(&gt;|t|)    
+## (Intercept)    6.5410e+00  1.1797e-02 554.4767 &lt; 2.2e-16 ***
+## smsayes        2.0711e-01  1.4458e-02  14.3251 &lt; 2.2e-16 ***
+## exp_c          8.3801e-03  1.1422e-03   7.3367 2.618e-13 ***
+## smsayes:exp_c -6.2419e-05  1.4071e-03  -0.0444    0.9646    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>qqnorm(model$residuals, main = &quot;QQ-plot of Model Residuals&quot;)
+qqline(model$residuals, col = &quot;red&quot;)</code></pre>
+<p><img src="../../project/project2_files/figure-html/unnamed-chunk-4-2.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="bootstrapped-standard-errors" class="section level3">
+<h3>4. Bootstrapped Standard Errors</h3>
+<p>Compared to the models using original SEs and robust SEs, each of the coefficients are much smaller. For instance, this model predicts that individuals living in a SMSA with average work experience have a predicted log wage that is only 0.0145 greater than individuals not living in a SMSA.</p>
+<pre class="r"><code>set.seed(348)
+samp_distn &lt;- replicate(5000, {
+    boot_dat &lt;- sample_frac(wage, replace = T)
+    fit &lt;- lm(lwage ~ smsa * exp_c, data = boot_dat)
+    coef(fit)
+})
+samp_distn %&gt;% t %&gt;% as.data.frame %&gt;% summarize_all(sd)</code></pre>
+<pre><code>##   (Intercept)    smsayes       exp_c smsayes:exp_c
+## 1   0.0118301 0.01446197 0.001154194   0.001434815</code></pre>
+</div>
+<div id="logistic-regression-part-1" class="section level3">
+<h3>5. Logistic Regression Part 1</h3>
+<p>A logistic regression model was used to predict marriage status from log wage and length of education. The lwage coefficient indicates that an increase in the log wage of 1 unit multiplies the odds of being married by 8.263 (holding education length constant). The ed coefficient indicates that an increase in education length of 1 unit multplies the odds of being married by 0.864 (holding log wage constant).</p>
+<p>The accuracy, sensitivity (TPR), specificity (TNR), precision (PPV), and AUC are reported in the table below. The accuracy is fairly good (0.820), and the TPR indicates that the probability of correctly predicting that someone is married is high (0.983). However, the TNR is low and indicates that the probability of predicting not married for people that are not married is only 0.105. The precision indicates that the proportion classified as married who actually are is 0.828. Finally, the AUC of 0.726 indicates that the model is fair but not necessarily good.</p>
+<pre class="r"><code>library(plotROC)
+wage &lt;- wage %&gt;% mutate(y = ifelse(married == &quot;yes&quot;, 
+    1, 0))
+
+fit &lt;- glm(y ~ lwage + ed, data = wage, family = &quot;binomial&quot;)
+summary(fit)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = y ~ lwage + ed, family = &quot;binomial&quot;, data = wage)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -2.8622   0.3145   0.4874   0.6496   2.2339  
+## 
+## Coefficients:
+##              Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept) -10.51069    0.65317 -16.092   &lt;2e-16 ***
+## lwage         2.11176    0.11031  19.144   &lt;2e-16 ***
+## ed           -0.14669    0.01714  -8.558   &lt;2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 3996.5  on 4164  degrees of freedom
+## Residual deviance: 3561.7  on 4162  degrees of freedom
+## AIC: 3567.7
+## 
+## Number of Fisher Scoring iterations: 5</code></pre>
+<pre class="r"><code>exp(coef(fit))</code></pre>
+<pre><code>##  (Intercept)        lwage           ed 
+## 2.724369e-05 8.262801e+00 8.635601e-01</code></pre>
+<pre class="r"><code>class_diag &lt;- function(probs, truth) {
+    
+    tab &lt;- table(factor(probs &gt; 0.5, levels = c(&quot;FALSE&quot;, 
+        &quot;TRUE&quot;)), truth)
+    acc = sum(diag(tab))/sum(tab)
+    sens = tab[2, 2]/colSums(tab)[2]
+    spec = tab[1, 1]/colSums(tab)[1]
+    ppv = tab[2, 2]/rowSums(tab)[2]
+    
+    if (is.numeric(truth) == FALSE &amp; is.logical(truth) == 
+        FALSE) 
+        truth &lt;- as.numeric(truth) - 1
+    
+    ord &lt;- order(probs, decreasing = TRUE)
+    probs &lt;- probs[ord]
+    truth &lt;- truth[ord]
+    
+    TPR = cumsum(truth)/max(1, sum(truth))
+    FPR = cumsum(!truth)/max(1, sum(!truth))
+    
+    dup &lt;- c(probs[-1] &gt;= probs[-length(probs)], FALSE)
+    TPR &lt;- c(0, TPR[!dup], 1)
+    FPR &lt;- c(0, FPR[!dup], 1)
+    
+    n &lt;- length(TPR)
+    auc &lt;- sum(((TPR[-1] + TPR[-n])/2) * (FPR[-1] - 
+        FPR[-n]))
+    
+    data.frame(acc, sens, spec, ppv, auc)
+}
+
+wage$prob &lt;- predict(fit, type = &quot;response&quot;)
+class_diag(wage$prob, wage$y)</code></pre>
+<pre><code>##         acc      sens      spec       ppv       auc
+## 1 0.8201681 0.9831958 0.1047865 0.8281599 0.7257913</code></pre>
+<pre class="r"><code>truth &lt;- wage$y
+table(prediction = as.numeric(wage$prob &gt; 0.5), truth)</code></pre>
+<pre><code>##           truth
+## prediction    0    1
+##          0   81   57
+##          1  692 3335</code></pre>
+<pre class="r"><code>wage$married &lt;- as.factor(wage$married)
+wage$logit &lt;- predict(fit, type = &quot;link&quot;)
+
+wage %&gt;% ggplot() + geom_density(aes(logit, color = married, 
+    fill = married), alpha = 0.4) + theme(legend.position = c(0.85, 
+    0.85)) + geom_vline(xintercept = 0) + xlab(&quot;predictor (logit)&quot;)</code></pre>
+<p><img src="../../project/project2_files/figure-html/unnamed-chunk-6-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ROCplot &lt;- ggplot(wage) + geom_roc(aes(d = y, m = prob), 
+    n.cuts = 0)
+ROCplot</code></pre>
+<p><img src="../../project/project2_files/figure-html/unnamed-chunk-6-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>calc_auc(ROCplot)</code></pre>
+<pre><code>##   PANEL group       AUC
+## 1     1    -1 0.7258018</code></pre>
+</div>
+<div id="logistic-regression-part-2" class="section level3">
+<h3>5. Logistic Regression Part 2</h3>
+<p>A logistic regression predicting marriage status from all of the other variables was performed. The accuracy is good (0.921), and the TPR indicates that the probability of correctly predicting that someone is married is very high (0.996). However, the TNR is relatively low and indicates that the probability of predicting not married for people that are not married is 0.591 (better than previous model). The precision indicates that the proportion classified as married who actually are is 0.915. Finally, the AUC of 0.868 indicates that the model is good.</p>
+<p>A 10-fold CV was also performed, and the AUC was found to be 0.864. This is very similar to the in-sample AUC and indicates that the model is good. In addition, the accuracy, TPR, TNR, and precision are reported, and they are comparable to the in-sample metrics.</p>
+<p>Finally, LASSO was performed, and the variables exp (years of experience), sex, black, and lwage (log wage) were retained. The 10-fold CV was performed with these variables, and the AUC was found to be 0.860. This is very similar to the AUCs above and indicates that the model is good but not necessarily better than the previous models.</p>
+<pre class="r"><code>fit2 &lt;- glm(y ~ exp + wks + bluecol + ind + south + 
+    smsa + sex + union + ed + black + lwage, data = wage, 
+    family = &quot;binomial&quot;)
+summary(fit2)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = y ~ exp + wks + bluecol + ind + south + smsa + 
+##     sex + union + ed + black + lwage, family = &quot;binomial&quot;, data = wage)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -2.9125   0.2345   0.3320   0.4465   2.7454  
+## 
+## Coefficients:
+##              Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept) -7.744461   1.116761  -6.935 4.07e-12 ***
+## exp          0.048932   0.006649   7.359 1.85e-13 ***
+## wks          0.009128   0.010955   0.833 0.404739    
+## bluecolyes  -0.003313   0.160820  -0.021 0.983565    
+## ind          0.256020   0.131923   1.941 0.052296 .  
+## southyes     0.213966   0.138213   1.548 0.121601    
+## smsayes     -0.497612   0.139140  -3.576 0.000348 ***
+## sexmale      5.676132   0.308815  18.380  &lt; 2e-16 ***
+## unionyes     0.466491   0.143194   3.258 0.001123 ** 
+## ed           0.031710   0.030890   1.027 0.304627    
+## blackyes    -1.133004   0.195003  -5.810 6.24e-09 ***
+## lwage        0.424661   0.165831   2.561 0.010443 *  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 3996.5  on 4164  degrees of freedom
+## Residual deviance: 2111.9  on 4153  degrees of freedom
+## AIC: 2135.9
+## 
+## Number of Fisher Scoring iterations: 6</code></pre>
+<pre class="r"><code>wage$prob2 &lt;- predict(fit2, type = &quot;response&quot;)
+class_diag(wage$prob2, wage$y)</code></pre>
+<pre><code>##         acc      sens      spec       ppv       auc
+## 1 0.9212485 0.9964623 0.5912031 0.9145022 0.8681412</code></pre>
+<pre class="r"><code>set.seed(1234)
+k = 10
+
+data &lt;- wage[sample(nrow(wage)), ]
+folds &lt;- cut(seq(1:nrow(wage)), breaks = k, labels = F)
+
+diags &lt;- NULL
+for (i in 1:k) {
+    train &lt;- data[folds != i, ]
+    test &lt;- data[folds == i, ]
+    
+    truth &lt;- test$y
+    
+    fit &lt;- glm(y ~ exp + wks + bluecol + ind + south + 
+        smsa + sex + union + ed + black + lwage, family = &quot;binomial&quot;, 
+        data = train)
+    probs &lt;- predict(fit, newdata = test, type = &quot;response&quot;)
+    
+    diags &lt;- rbind(diags, class_diag(probs, truth))
+}
+
+summarize_all(diags, mean)</code></pre>
+<pre><code>##         acc      sens      spec       ppv       auc
+## 1 0.9212507 0.9964606 0.5932597 0.9145378 0.8638171</code></pre>
+<pre class="r"><code>library(glmnet)
+set.seed(1234)
+y &lt;- as.matrix(wage$y)
+x &lt;- model.matrix(y ~ exp + wks + bluecol + ind + south + 
+    smsa + sex + union + ed + black + lwage, data = wage)[, 
+    -1]
+cv &lt;- cv.glmnet(x, y, family = &quot;binomial&quot;)
+lasso &lt;- glmnet(x, y, family = &quot;binomial&quot;, lambda = cv$lambda.1se)
+coef(lasso)</code></pre>
+<pre><code>## 12 x 1 sparse Matrix of class &quot;dgCMatrix&quot;
+##                      s0
+## (Intercept) -3.65795778
+## exp          0.02621271
+## wks          .         
+## bluecolyes   .         
+## ind          .         
+## southyes     .         
+## smsayes      .         
+## sexmale      4.74015102
+## unionyes     .         
+## ed           .         
+## blackyes    -0.59412556
+## lwage        0.11363929</code></pre>
+<pre class="r"><code>set.seed(1234)
+k = 10
+
+data &lt;- wage[sample(nrow(wage)), ]
+folds &lt;- cut(seq(1:nrow(wage)), breaks = k, labels = F)
+
+diags &lt;- NULL
+for (i in 1:k) {
+    train &lt;- data[folds != i, ]
+    test &lt;- data[folds == i, ]
+    
+    truth &lt;- test$y
+    
+    fit &lt;- glm(y ~ exp + sex + black + lwage, family = &quot;binomial&quot;, 
+        data = train)
+    probs &lt;- predict(fit, newdata = test, type = &quot;response&quot;)
+    
+    diags &lt;- rbind(diags, class_diag(probs, truth))
+}
+
+summarize_all(diags, mean)</code></pre>
+<pre><code>##         acc      sens      spec       ppv       auc
+## 1 0.9212507 0.9964606 0.5932597 0.9145378 0.8598645</code></pre>
+<pre><code>## R version 3.6.1 (2019-07-05)
+## Platform: x86_64-pc-linux-gnu (64-bit)
+## Running under: Ubuntu 18.04.5 LTS
+## 
+## Matrix products: default
+## BLAS:   /stor/system/opt/R/R-3.6.1/lib/R/lib/libRblas.so
+## LAPACK: /stor/system/opt/R/R-3.6.1/lib/R/lib/libRlapack.so
+## 
+## locale:
+##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+##  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+##  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+##  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+##  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+## [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+##  [1] glmnet_4.0-2    Matrix_1.3-2    plotROC_2.2.1   sandwich_3.0-0 
+##  [5] lmtest_0.9-38   zoo_1.8-8       forcats_0.5.0   stringr_1.4.0  
+##  [9] dplyr_1.0.2     purrr_0.3.4     readr_1.4.0     tidyr_1.1.2    
+## [13] tibble_3.0.4    ggplot2_3.3.3   tidyverse_1.3.0
+## 
+## loaded via a namespace (and not attached):
+##  [1] httr_1.4.2        jsonlite_1.7.2    splines_3.6.1     foreach_1.5.1    
+##  [5] modelr_0.1.8      assertthat_0.2.1  cellranger_1.1.0  yaml_2.2.1       
+##  [9] pillar_1.4.7      backports_1.2.1   lattice_0.20-41   glue_1.4.2       
+## [13] digest_0.6.27     rvest_0.3.6       colorspace_2.0-0  htmltools_0.5.0  
+## [17] plyr_1.8.6        pkgconfig_2.0.3   broom_0.7.3       haven_2.3.1      
+## [21] bookdown_0.21     scales_1.1.1      mgcv_1.8-33       generics_0.1.0   
+## [25] farver_2.0.3      ellipsis_0.3.1    withr_2.3.0       cli_2.2.0        
+## [29] survival_3.2-7    magrittr_2.0.1    crayon_1.3.4      readxl_1.3.1     
+## [33] evaluate_0.14     fs_1.5.0          fansi_0.4.1       nlme_3.1-151     
+## [37] xml2_1.3.2        blogdown_0.20     tools_3.6.1       hms_0.5.3        
+## [41] formatR_1.7       lifecycle_0.2.0   munsell_0.5.0     reprex_0.3.0     
+## [45] compiler_3.6.1    rlang_0.4.10      grid_3.6.1        iterators_1.0.13 
+## [49] rstudioapi_0.13   labeling_0.4.2    rmarkdown_2.6     gtable_0.3.0     
+## [53] codetools_0.2-18  DBI_1.1.0         curl_4.3          R6_2.5.0         
+## [57] lubridate_1.7.9.2 knitr_1.30        utf8_1.1.4        shape_1.4.5      
+## [61] stringi_1.5.3     Rcpp_1.0.5        vctrs_0.3.6       dbplyr_2.0.0     
+## [65] tidyselect_1.1.0  xfun_0.20</code></pre>
+<pre><code>## [1] &quot;2021-05-09 20:49:29 CDT&quot;</code></pre>
+<pre><code>##                                        sysname 
+##                                        &quot;Linux&quot; 
+##                                        release 
+##                           &quot;4.15.0-142-generic&quot; 
+##                                        version 
+## &quot;#146-Ubuntu SMP Tue Apr 13 01:11:19 UTC 2021&quot; 
+##                                       nodename 
+##                   &quot;educcomp02.ccbb.utexas.edu&quot; 
+##                                        machine 
+##                                       &quot;x86_64&quot; 
+##                                          login 
+##                                      &quot;unknown&quot; 
+##                                           user 
+##                                       &quot;kyh283&quot; 
+##                                 effective_user 
+##                                       &quot;kyh283&quot;</code></pre>
+</div>
+</div>
+
+            
+        <hr>         <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div> 
+            </div>
+          </div>
+
+   <hr>  <div class="disqus">
+  <div id="disqus_thread"></div>
+  <script type="text/javascript">
+
+    (function() {
+      
+      
+      if (window.location.hostname == "localhost")
+        return;
+
+      var disqus_shortname = '';
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div> 
+        </div>
+      </div>
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="../../js/docs.min.js"></script>
+<script src="../../js/main.js"></script>
+
+<script src="../../js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>
